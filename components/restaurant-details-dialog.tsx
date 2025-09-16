@@ -16,11 +16,7 @@ interface Restaurant {
   status: "want_to_go" | "been_there"
   photo_url?: string
   created_at: string
-  tags?: Array<{
-    id: string
-    name: string
-    color: string
-  }>
+  tags?: Array<{ id: string; name: string; color: string }>
 }
 
 interface Dish {
@@ -57,55 +53,38 @@ export function RestaurantDetailsDialog({ restaurant, open, onOpenChange, onUpda
   const [selectedTags, setSelectedTags] = useState<Array<{ name: string; color: string }>>([])
 
   useEffect(() => {
-    if (open && restaurant.status === "been_there") {
-      fetchDishes()
-    }
     if (open) {
-      setSelectedTags(restaurant.tags?.map((tag) => ({ name: tag.name, color: tag.color })) || [])
+      if (restaurant.status === "been_there") fetchDishes()
+      setSelectedTags(restaurant.tags?.map(tag => ({ name: tag.name, color: tag.color })) || [])
     }
-  }, [open, restaurant.id, restaurant.tags])
+  }, [open, restaurant.id, restaurant.tags, restaurant.status])
 
   const fetchDishes = () => {
+    // TODO: substituir por fetch real do Supabase
     try {
-      const storedDishes = /* replaced */ null // TODO: fetch from Supabase (dishes)
+      const storedDishes = null
       const allDishes: Dish[] = storedDishes ? JSON.parse(storedDishes) : []
-      const restaurantDishes = allDishes.filter((dish) => dish.restaurant_id === restaurant.id)
+      const restaurantDishes = allDishes.filter(dish => dish.restaurant_id === restaurant.id)
       setDishes(restaurantDishes)
     } catch (error) {
-      console.error("Error fetching dishes:", error)
+      console.error("Erro ao buscar pratos:", error)
     }
   }
 
-  const handleDishAdded = () => {
-    fetchDishes()
-  }
+  const handleDishAdded = () => fetchDishes()
 
   const handleTagToggle = (tag: { name: string; color: string }) => {
-    setSelectedTags((prev) => {
-      const exists = prev.find((t) => t.name === tag.name)
-      if (exists) {
-        return prev.filter((t) => t.name !== tag.name)
-      } else {
-        return [...prev, tag]
-      }
+    setSelectedTags(prev => {
+      const exists = prev.find(t => t.name === tag.name)
+      if (exists) return prev.filter(t => t.name !== tag.name)
+      return [...prev, tag]
     })
   }
 
   const handleSaveTags = () => {
-    try {
-      const storedRestaurants = /* replaced */ null // TODO: use fetchRestaurants()
-      const restaurants = storedRestaurants ? JSON.parse(storedRestaurants) : []
-
-      const updatedRestaurants = restaurants.map((r: any) =>
-        r.id === restaurant.id ? { ...r, tags: selectedTags.map((tag) => ({ ...tag, id: crypto.randomUUID() })) } : r,
-      )
-
-      // TODO: replace with addRestaurant() and update state)
-      setIsEditingTags(false)
-      onUpdate()
-    } catch (error) {
-      console.error("Error updating tags:", error)
-    }
+    // TODO: salvar tags no backend (Supabase)
+    setIsEditingTags(false)
+    onUpdate()
   }
 
   return (
@@ -115,102 +94,73 @@ export function RestaurantDetailsDialog({ restaurant, open, onOpenChange, onUpda
           <DialogHeader>
             <DialogTitle className="text-2xl">{restaurant.name}</DialogTitle>
             <DialogDescription className="flex items-center gap-2 text-base">
-              <MapPin className="h-4 w-4" />
-              {restaurant.address}
+              <MapPin className="h-4 w-4" /> {restaurant.address}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-6">
             {restaurant.photo_url && (
               <div className="aspect-video overflow-hidden rounded-lg">
-                <img
-                  src={restaurant.photo_url || "/placeholder.svg"}
-                  alt={restaurant.name}
-                  className="w-full h-full object-cover"
-                />
+                <img src={restaurant.photo_url} alt={restaurant.name} className="w-full h-full object-cover" />
               </div>
             )}
 
             <div className="space-y-3">
+              {/* Culinária e status */}
               <div className="flex flex-wrap gap-2">
                 <Badge variant="secondary" className="gap-1">
-                  <Utensils className="h-3 w-3" />
-                  {restaurant.cuisine_type}
+                  <Utensils className="h-3 w-3" /> {restaurant.cuisine_type}
                 </Badge>
                 <Badge variant={restaurant.status === "been_there" ? "default" : "outline"}>
                   {restaurant.status === "been_there" ? "Já Visitado" : "Quero Visitar"}
                 </Badge>
               </div>
 
+              {/* Tags */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium">Tags:</span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setIsEditingTags(!isEditingTags)}
-                    className="h-6 px-2 text-xs"
-                  >
-                    <Edit className="h-3 w-3 mr-1" />
-                    {isEditingTags ? "Cancelar" : "Editar"}
+                  <Button size="sm" variant="ghost" onClick={() => setIsEditingTags(!isEditingTags)} className="h-6 px-2 text-xs">
+                    <Edit className="h-3 w-3 mr-1" /> {isEditingTags ? "Cancelar" : "Editar"}
                   </Button>
                 </div>
 
                 {isEditingTags ? (
                   <div className="space-y-3">
                     <div className="flex flex-wrap gap-2">
-                      {availableTags.map((tag) => {
-                        const isSelected = selectedTags.find((t) => t.name === tag.name)
+                      {availableTags.map(tag => {
+                        const isSelected = selectedTags.some(t => t.name === tag.name)
                         return (
                           <Badge
                             key={tag.name}
                             variant={isSelected ? "default" : "outline"}
                             className="cursor-pointer hover:opacity-80 transition-opacity"
-                            style={
-                              isSelected
-                                ? { backgroundColor: tag.color, borderColor: tag.color }
-                                : { borderColor: tag.color, color: tag.color }
-                            }
+                            style={isSelected ? { backgroundColor: tag.color, borderColor: tag.color } : { borderColor: tag.color, color: tag.color }}
                             onClick={() => handleTagToggle(tag)}
                           >
-                            {tag.name}
-                            {isSelected && <X className="ml-1 h-3 w-3" />}
+                            {tag.name} {isSelected && <X className="ml-1 h-3 w-3" />}
                           </Badge>
                         )
                       })}
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" onClick={handleSaveTags}>
-                        Salvar Tags
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => setIsEditingTags(false)}>
-                        Cancelar
-                      </Button>
+                      <Button size="sm" onClick={handleSaveTags}>Salvar Tags</Button>
+                      <Button size="sm" variant="outline" onClick={() => setIsEditingTags(false)}>Cancelar</Button>
                     </div>
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2">
-                    {restaurant.tags && restaurant.tags.length > 0 ? (
-                      restaurant.tags.map((tag) => (
-                        <Badge
-                          key={tag.id}
-                          variant="outline"
-                          style={{
-                            borderColor: tag.color,
-                            color: tag.color,
-                          }}
-                        >
-                          {tag.name}
-                        </Badge>
-                      ))
-                    ) : (
-                      <span className="text-sm text-muted-foreground">Nenhuma tag adicionada</span>
-                    )}
+                    {restaurant.tags?.length ? restaurant.tags.map(tag => (
+                      <Badge key={tag.id} variant="outline" style={{ borderColor: tag.color, color: tag.color }}>
+                        {tag.name}
+                      </Badge>
+                    )) : <span className="text-sm text-muted-foreground">Nenhuma tag adicionada</span>}
                   </div>
                 )}
               </div>
             </div>
 
+            {/* Pratos */}
             {restaurant.status === "been_there" && (
               <>
                 <Separator />
@@ -218,8 +168,7 @@ export function RestaurantDetailsDialog({ restaurant, open, onOpenChange, onUpda
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-semibold">Pratos Experimentados</h3>
                     <Button size="sm" onClick={() => setIsAddDishOpen(true)} className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      Adicionar Prato
+                      <Plus className="h-4 w-4" /> Adicionar Prato
                     </Button>
                   </div>
 
@@ -231,19 +180,14 @@ export function RestaurantDetailsDialog({ restaurant, open, onOpenChange, onUpda
                     </div>
                   ) : (
                     <div className="grid gap-4">
-                      {dishes.map((dish) => (
+                      {dishes.map(dish => (
                         <div key={dish.id} className="border rounded-lg p-4 space-y-2">
                           <div className="flex items-start justify-between">
                             <h4 className="font-medium">{dish.name}</h4>
                             {dish.rating && (
                               <div className="flex items-center gap-1">
                                 {Array.from({ length: 5 }).map((_, i) => (
-                                  <Star
-                                    key={i}
-                                    className={`h-4 w-4 ${
-                                      i < dish.rating! ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                                    }`}
-                                  />
+                                  <Star key={i} className={`h-4 w-4 ${i < dish.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`} />
                                 ))}
                               </div>
                             )}
@@ -251,11 +195,7 @@ export function RestaurantDetailsDialog({ restaurant, open, onOpenChange, onUpda
                           {dish.notes && <p className="text-sm text-muted-foreground">{dish.notes}</p>}
                           {dish.photo_url && (
                             <div className="aspect-video max-w-xs overflow-hidden rounded">
-                              <img
-                                src={dish.photo_url || "/placeholder.svg"}
-                                alt={dish.name}
-                                className="w-full h-full object-cover"
-                              />
+                              <img src={dish.photo_url} alt={dish.name} className="w-full h-full object-cover" />
                             </div>
                           )}
                         </div>

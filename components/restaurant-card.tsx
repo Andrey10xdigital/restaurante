@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,10 +12,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useState } from "react"
 import { RestaurantDetailsDialog } from "@/components/restaurant-details-dialog"
 
-interface Restaurant {
+interface Tag {
+  id: string
+  name: string
+  color: string
+}
+
+export interface Restaurant {
   id: string
   name: string
   address: string
@@ -23,16 +29,13 @@ interface Restaurant {
   photo_url?: string
   created_at: string
   average_price?: string
-  tags?: Array<{
-    id: string
-    name: string
-    color: string
-  }>
+  tags?: Tag[]
 }
 
 interface RestaurantCardProps {
   restaurant: Restaurant
   onUpdate: () => void
+  onDelete: (id: string) => void
 }
 
 const cuisineColors: Record<string, string> = {
@@ -61,27 +64,17 @@ const cuisineColors: Record<string, string> = {
   Outro: "#6b7280",
 }
 
-export function RestaurantCard({ restaurant, onUpdate }: RestaurantCardProps) {
+export function RestaurantCard({ restaurant, onUpdate, onDelete }: RestaurantCardProps) {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
 
-  const handleStatusChange = async () => {
-    const newStatus = restaurant.status === "want_to_go" ? "been_there" : "want_to_go"
-    try {
-      await updateRestaurant(restaurant.id, { status: newStatus })
-      onUpdate()
-    } catch (error) {
-      console.error("Erro ao atualizar status do restaurante:", error)
-    }
+  const handleStatusChange = () => {
+    restaurant.status = restaurant.status === "want_to_go" ? "been_there" : "want_to_go"
+    onUpdate()
   }
 
-  const handleDelete = async () => {
-    if (!confirm("Tem certeza que deseja excluir este restaurante?")) return
-
-    try {
-      await deleteRestaurant(restaurant.id)
-      onUpdate()
-    } catch (error) {
-      console.error("Erro ao excluir restaurante:", error)
+  const handleDelete = () => {
+    if (confirm("Tem certeza que deseja excluir este restaurante?")) {
+      onDelete(restaurant.id)
     }
   }
 
@@ -121,6 +114,7 @@ export function RestaurantCard({ restaurant, onUpdate }: RestaurantCardProps) {
                 </div>
               )}
             </div>
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -128,7 +122,9 @@ export function RestaurantCard({ restaurant, onUpdate }: RestaurantCardProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setIsDetailsOpen(true)}>Ver detalhes</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setIsDetailsOpen(true)}>
+                  Ver/Editar Detalhes
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleStatusChange}>
                   {restaurant.status === "want_to_go" ? "Marcar como visitado" : "Marcar como desejo"}
                 </DropdownMenuItem>
