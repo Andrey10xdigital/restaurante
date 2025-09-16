@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
@@ -18,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PhotoUpload } from "@/components/photo-upload"
 import { Loader2, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { addRestaurant } from '@/utils/restaurantApi'
+import { addRestaurant } from "@/utils/restaurantApi"
 
 interface AddRestaurantDialogProps {
   open: boolean
@@ -27,29 +26,10 @@ interface AddRestaurantDialogProps {
 }
 
 const cuisineTypes = [
-  "Brasileiro",
-  "Italiano",
-  "Japonês",
-  "Chinês",
-  "Mexicano",
-  "Francês",
-  "Americano",
-  "Árabe",
-  "Indiano",
-  "Tailandês",
-  "Coreano",
-  "Peruano",
-  "Argentino",
-  "Português",
-  "Espanhol",
-  "Grego",
-  "Vegetariano",
-  "Vegano",
-  "Fast Food",
-  "Pizzaria",
-  "Churrascaria",
-  "Frutos do Mar",
-  "Outro",
+  "Brasileiro","Italiano","Japonês","Chinês","Mexicano","Francês","Americano",
+  "Árabe","Indiano","Tailandês","Coreano","Peruano","Argentino","Português",
+  "Espanhol","Grego","Vegetariano","Vegano","Fast Food","Pizzaria","Churrascaria",
+  "Frutos do Mar","Outro",
 ]
 
 const availableTags = [
@@ -62,32 +42,6 @@ const availableTags = [
   { name: "Lugar bonito", color: "#ec4899" },
   { name: "Saboroso", color: "#84cc16" },
 ]
-
-const cuisineColors: Record<string, string> = {
-  Brasileiro: "#10b981",
-  Italiano: "#ef4444",
-  Japonês: "#f59e0b",
-  Chinês: "#dc2626",
-  Mexicano: "#ea580c",
-  Francês: "#7c3aed",
-  Americano: "#2563eb",
-  Árabe: "#059669",
-  Indiano: "#c2410c",
-  Tailandês: "#16a34a",
-  Coreano: "#be123c",
-  Peruano: "#0891b2",
-  Argentino: "#7c2d12",
-  Português: "#0d9488",
-  Espanhol: "#b91c1c",
-  Grego: "#1d4ed8",
-  Vegetariano: "#65a30d",
-  Vegano: "#166534",
-  "Fast Food": "#dc2626",
-  Pizzaria: "#dc2626",
-  Churrascaria: "#7f1d1d",
-  "Frutos do Mar": "#0891b2",
-  Outro: "#6b7280",
-}
 
 export function AddRestaurantDialog({ open, onOpenChange, defaultStatus }: AddRestaurantDialogProps) {
   const [formData, setFormData] = useState({
@@ -136,7 +90,7 @@ export function AddRestaurantDialog({ open, onOpenChange, defaultStatus }: AddRe
       const restaurantId = crypto.randomUUID()
 
       // Upload photo if selected
-      let photoUrl = null
+      let photoUrl: string | null = null
       if (selectedPhoto) {
         photoUrl = await uploadPhoto(selectedPhoto)
       }
@@ -148,15 +102,16 @@ export function AddRestaurantDialog({ open, onOpenChange, defaultStatus }: AddRe
         cuisine_type: formData.cuisine_type,
         status: formData.status,
         photo_url: photoUrl,
-        created_at: new Date().toISOString(),
         tags: selectedTags.map((tag) => ({ ...tag, id: crypto.randomUUID() })),
         average_price: formData.average_price,
+        notes: formData.notes,
+        created_at: new Date().toISOString(),
       }
 
-      // Send to server (Supabase)
-      const created = await addRestaurant({ name: newRestaurant.name, notes: newRestaurant.notes })
-      try { onRestaurantAdded?.(created) } catch(e) { onRestaurantAdded && onRestaurantAdded() }
+      // Envia todos os campos para o Supabase
+      await addRestaurant(newRestaurant)
 
+      // Reset do formulário
       setFormData({
         name: "",
         address: "",
@@ -169,7 +124,7 @@ export function AddRestaurantDialog({ open, onOpenChange, defaultStatus }: AddRe
       setSelectedTags([])
 
       onOpenChange(false)
-      window.location.reload() // Simple refresh to update the list
+      window.location.reload() // Refresh simples para atualizar a lista
     } catch (error) {
       console.error("Error adding restaurant:", error)
       alert("Erro ao adicionar restaurante. Tente novamente.")
@@ -235,7 +190,7 @@ export function AddRestaurantDialog({ open, onOpenChange, defaultStatus }: AddRe
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="status">Status</Label>
+              <Label>Status</Label>
               <Select
                 value={formData.status}
                 onValueChange={(value: "want_to_go" | "been_there") => setFormData({ ...formData, status: value })}
