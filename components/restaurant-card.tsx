@@ -64,35 +64,24 @@ const cuisineColors: Record<string, string> = {
 export function RestaurantCard({ restaurant, onUpdate }: RestaurantCardProps) {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
 
-  const handleStatusChange = () => {
+  const handleStatusChange = async () => {
     const newStatus = restaurant.status === "want_to_go" ? "been_there" : "want_to_go"
-
     try {
-      const storedRestaurants = /* replaced */ null // TODO: use fetchRestaurants()
-      const restaurants: Restaurant[] = storedRestaurants ? JSON.parse(storedRestaurants) : []
-
-      const updatedRestaurants = restaurants.map((r) => (r.id === restaurant.id ? { ...r, status: newStatus } : r))
-
-      // TODO: replace with addRestaurant() and update state)
+      await updateRestaurant(restaurant.id, { status: newStatus })
       onUpdate()
     } catch (error) {
-      console.error("Error updating restaurant status:", error)
+      console.error("Erro ao atualizar status do restaurante:", error)
     }
   }
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!confirm("Tem certeza que deseja excluir este restaurante?")) return
 
     try {
-      const storedRestaurants = /* replaced */ null // TODO: use fetchRestaurants()
-      const restaurants: Restaurant[] = storedRestaurants ? JSON.parse(storedRestaurants) : []
-
-      const updatedRestaurants = restaurants.filter((r) => r.id !== restaurant.id)
-
-      // TODO: replace with addRestaurant() and update state)
+      await deleteRestaurant(restaurant.id)
       onUpdate()
     } catch (error) {
-      console.error("Error deleting restaurant:", error)
+      console.error("Erro ao excluir restaurante:", error)
     }
   }
 
@@ -159,7 +148,7 @@ export function RestaurantCard({ restaurant, onUpdate }: RestaurantCardProps) {
             style={{
               borderColor: cuisineColor,
               color: cuisineColor,
-              backgroundColor: `${cuisineColor}10`, // Adiciona transparência de 10% ao fundo
+              backgroundColor: `${cuisineColor}10`,
             }}
           >
             {restaurant.cuisine_type}

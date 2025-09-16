@@ -1,23 +1,85 @@
-/**
- * utils/restaurantApi.ts
- * Frontend fetch wrappers to replace localStorage reads/writes.
- */
+// lib/restaurantApi.ts
+import { supabase } from "@/./lib/supabaseClient"
 
-export async function fetchRestaurants() {
-  const res = await fetch('/api/restaurants')
-  if (!res.ok) throw new Error('Failed to fetch restaurants')
-  return res.json()
+export interface Tag {
+  id: string
+  name: string
+  color: string
 }
 
-export async function addRestaurant(payload: { name: string; notes?: string }) {
-  const res = await fetch('/api/restaurants', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
-  if (!res.ok) {
-    const err = await res.json().catch(()=>({error: 'unknown'}))
-    throw new Error(err?.error || 'Failed to add restaurant')
+export interface Restaurant {
+  id: string
+  name: string
+  address?: string
+  cuisine_type?: string
+  status: "want_to_go" | "been_there"
+  photo_url?: string
+  created_at: string
+  average_price?: string
+  notes?: string
+  tags?: Tag[]
+}
+
+// Adiciona um novo restaurante
+export async function addRestaurant(restaurant: Omit<Restaurant, "id" | "created_at">) {
+  const newRestaurant = {
+    ...restaurant,
+    id: crypto.randomUUID(),
+    created_at: new Date().toISOString(),
   }
-  return res.json()
+
+  const { data, error } = await supabase
+    .from("restaurants")
+    .insert([newRestaurant])
+    .select("*") // retorna todos os campos após inserção
+
+  if (error) {
+    console.error("Erro ao adicionar restaurante:", error)
+    throw error
+  }
+
+  return data[0]
+}
+
+// Busca todos os restaurantes
+export async function getRestaurants(): Promise<Restaurant[]> {
+  const { data, error } = await supabase
+    .from("restaurants")
+    .select("*")
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Erro ao buscar restaurantes:", error)
+    throw error
+  }
+
+  return data
+}
+
+// Atualiza restaurante (ex: status, notes, tags, photo_url, etc.)
+export async function updateRestaurant(id: string, updates: Partial<Restaurant>) {
+  const { data, error } = await supabase
+    .from("restaurants")
+    .update(updates)
+    .eq("id", id)
+    .select("*")
+
+  if (error) {
+    console.error("Erro ao atualizar restaurante:", error)
+    throw error
+  }
+
+  return data[0]
+}
+
+// Exclui restaurante
+export async function deleteRestaurant(id: string) {
+  const { data, error } = await supabase.from("restaurants").delete().eq("id", id)
+
+  if (error) {
+    console.error("Erro ao deletar restaurante:", error)
+    throw error
+  }
+
+  return data
 }
